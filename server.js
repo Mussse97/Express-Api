@@ -3,7 +3,12 @@ const express = require("express");
 const app = express();
 const port = 3000;
 
+const authMiddleware = require("./authMiddleware");
+const validationMiddleware = require("./validatorMiddleware");
+const loggerMiddleware = require("./validatorMiddleware");
+
 app.use(express.json()); 
+app.use(loggerMiddleware); // Loggar alla requests
 
 let teams = [
   { id: 1, name: "FC Barcelona", country: "Spain", coach: "Xavi", players: 25 },
@@ -12,7 +17,7 @@ let teams = [
 ];
 
 // Hämta alla lag
-app.get("/teams", (req, res) => {
+app.get("/teams",authMiddleware, (req, res) => {
   res.json(teams);
 });
 
@@ -27,19 +32,9 @@ app.get("/teams/:id", (req, res) => {
 });
 
 // Lägg till ett nytt lag
-app.post("/teams", (req, res) => {
+app.post("/teams", authMiddleware, validationMiddleware, (req, res) => {
   const { name, country, coach, players } = req.body;
-  if (!name || !country || !coach || !players) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  const newTeam = {
-    id: teams.length ? teams[teams.length - 1].id + 1 : 1, // Skapa ett nytt ID
-    name,
-    country,
-    coach,
-    players,
-  };
+  const newTeam = { id: teams.length + 1, name, country, coach, players };
 
   teams.push(newTeam);
   res.status(201).json(newTeam);
